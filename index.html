@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>
+            Socket Chat Example
+        </title>
+        <style media="screen">
+            body{
+                height: 100%;
+                width: 100%;
+                background: LightSalmon;
+            }
+            #content {
+                display: none;
+                background: pink;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 80%;
+                width: 80%;
+                margin: auto;
+            }
+            .whisper {
+                font-style: italic;
+                color: darkGrey;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Socket Chat Example</h1>
+        <div id="login">
+            <p id="errorHolder">
+
+            </p>
+            <form id="user" action="" >
+                <input autocomplete="off" type="text" name="name">
+                <button>Sign In</button>
+            </form>
+        </div>
+        <div id="content">
+            <form id="form" action="">
+                <input type="text" autocomplete="off" name="Message" id="message" placeholder="message">
+                <button>Send</button>
+            </form>
+            <ul id="msgs">
+                <li>Messages</li>
+            </ul>
+        </div>
+        <div id="userlist">
+            <ul id="users">
+                <li>Users</li>
+            </ul>
+        </div>
+
+
+        <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+        <script>
+            var socket = io();
+            document.getElementById('form').onsubmit = function(){
+                socket.emit('chat message' , document.getElementById('message').value , function(data){
+                    var node = document.createElement("LI");                                        // Create a <li> node
+                    var textnode = '<span class="error">' + data + '</span>';
+                    node.innerHTML = textnode;
+                    document.getElementById('msgs').appendChild(node);
+                });
+                document.getElementById('message').value = '';
+                return false;
+            };
+            [].slice.call(document.querySelectorAll('input')).forEach(function(el){
+                el.addEventListener('focus',function(){
+                    socket.emit('texting');
+                });
+            });
+            socket.on('texting' , function(data) {
+                console.log(data);
+            });
+            document.getElementById('user').onsubmit = function(){
+                socket.emit('new user' , document.querySelector('#user input').value , function(data){
+                    if (data) {
+                        document.querySelector('#login').style = 'display: none';
+                        document.querySelector('#content').style = 'display: inline';
+                    } else {
+                        document.querySelector('#errorHolder').innerHTML = 'This name is already taken, try another one'; //implement suggestions
+                    }
+                });
+                document.querySelector('#user input').value = '';
+                return false;
+            };
+            socket.on('chat message' , function(msg){
+                var node = document.createElement("LI");                                        // Create a <li> node
+                var textnode = '<strong>' + msg.user + '</strong>: ' + msg.message;          // Create a text node
+                node.innerHTML = textnode;
+                document.getElementById('msgs').appendChild(node);
+            });
+            socket.on('whisper' , function(msg) {
+                var node = document.createElement("LI");                                        // Create a <li> node
+                var textnode = '<span class="whisper"><strong>' + msg.user + '</strong>: ' + msg.message + '</span>';          // Create a text node
+                node.innerHTML = textnode;
+                document.getElementById('msgs').appendChild(node);
+                console.log('Hola');
+            });
+            socket.on('users' , function(users) {
+                document.getElementById('users').innerHTML = '<li>Users</li>'
+                for (var id in users) {
+                    var node = document.createElement("LI");                                        // Create a <li> node
+                    var textnode = document.createTextNode(users[id]);          // Create a text node
+                    node.appendChild(textnode);
+                    document.getElementById('users').appendChild(node);
+                };
+            });
+        </script>
+    </body>
+</html>
